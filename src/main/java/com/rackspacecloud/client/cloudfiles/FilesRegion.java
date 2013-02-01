@@ -15,7 +15,7 @@ public class FilesRegion {
 		this.cdnManagementURL = CDNManagementURL;
 		this.isDefault = isDefault;
 	}
-	
+
 	public String getRegionId() {
 		return regionId;
 	}
@@ -31,7 +31,7 @@ public class FilesRegion {
 	public String getCDNManagementURL() {
 		return cdnManagementURL;
 	}
-	
+
 	public boolean isDefault() {
 		return isDefault;
 	}

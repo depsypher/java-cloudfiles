@@ -1,27 +1,29 @@
 /*
  * See COPYING for license information.
- */ 
+ */
 
 package com.rackspacecloud.client.cloudfiles.sample;
 
 import java.io.IOException;
+import java.util.List;
 
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.lang.StringUtils;
-
-// import org.apache.log4j.Logger;
 import org.apache.http.HttpException;
 
-import com.rackspacecloud.client.cloudfiles.*;
-
-import java.util.*;
+import com.rackspacecloud.client.cloudfiles.FilesClient;
+import com.rackspacecloud.client.cloudfiles.FilesContainer;
+import com.rackspacecloud.client.cloudfiles.FilesContainerInfo;
+import com.rackspacecloud.client.cloudfiles.FilesException;
+import com.rackspacecloud.client.cloudfiles.FilesObject;
+// import org.apache.log4j.Logger;
 
 /*
  * TODO: Add List Metadata for all objects as a switch on the all
@@ -77,7 +79,7 @@ public class FilesList
 			}//if (line.hasOption("container"))
 			else if (line.hasOption("H"))
 			{
-				System.out.println ("This option needs to be used in conjunction with another option that lists objects or container.");    
+				System.out.println ("This option needs to be used in conjunction with another option that lists objects or container.");
 			}
 		}
 		catch( ParseException err )
@@ -93,7 +95,7 @@ public class FilesList
 
 		catch ( IOException err)
 		{
-			System.err.println( "Please see the logs for more details. Error Message: "+err.getMessage() );        
+			System.err.println( "Please see the logs for more details. Error Message: "+err.getMessage() );
 		}//catch ( IOException err)
 	}
 
@@ -148,7 +150,7 @@ public class FilesList
 			System.out.println (client.getAccount() + " containers: ");
 			for (FilesContainer value: containers )
 			{
-				FilesContainerInfo info = value.getInfo();                
+				FilesContainerInfo info = value.getInfo();
 				System.out.println ("\t"+value.getName ()+" - "+info.getObjectCount()+" objects:");
 
 				List<FilesObject> objects = value.getObjects();
@@ -157,7 +159,7 @@ public class FilesList
 					if (humanReadable)
 						System.out.println ("\t\t"+StringUtils.rightPad(obj.getName (), 35) + obj.getSizeString());
 					else
-						System.out.println ("\t\t"+StringUtils.rightPad(obj.getName (), 35) + obj.getSize()+"Bytes");                
+						System.out.println ("\t\t"+StringUtils.rightPad(obj.getName (), 35) + obj.getSize()+"Bytes");
 				}
 
 				if (humanReadable)
@@ -180,14 +182,14 @@ public class FilesList
 			for (FilesContainer value: containers )
 			{
 				FilesContainerInfo info = value.getInfo();
-				System.out.println ("\t"+value.getName ()+" - "+info.getObjectCount()+" objects:");            
+				System.out.println ("\t"+value.getName ()+" - "+info.getObjectCount()+" objects:");
 
 				if (humanReadable)
 				{
 					System.out.println ("\tTotal Size: "+ getSizeString (info.getTotalSize())+"\n");
 				}
 				else
-					System.out.println ("\tTotal Size: "+info.getTotalSize()+"Bytes\n");                
+					System.out.println ("\tTotal Size: "+info.getTotalSize()+"Bytes\n");
 			}
 		}
 	}//end private static void printContainers ()
@@ -223,7 +225,7 @@ public class FilesList
 		options.addOption(containersOnly);
 		options.addOption(containers);
 		options.addOption(container);
-		options.addOption(kb);    
+		options.addOption(kb);
 		options.addOption(help);
 
 		return options;

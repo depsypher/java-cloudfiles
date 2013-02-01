@@ -1,6 +1,6 @@
 /*
  * See COPYING for license information.
- */ 
+ */
 
 package com.rackspacecloud.client.cloudfiles.sample;
 
@@ -34,34 +34,34 @@ import com.rackspacecloud.client.cloudfiles.FilesObjectMetaData;
 public class FilesCli {
 	FilesClient client = null;
 	BufferedReader console = new BufferedReader(new InputStreamReader(System.in));
-	
+
 	private boolean doLogin() {
-		
+
 		try {
 			System.out.print("Username: ");
 			String username = console.readLine().trim();
-			
+
 			System.out.print("Password: ");
 			String password = console.readLine().trim();
-			
-			final boolean result = doLogin(username, password);			
-			
+
+			final boolean result = doLogin(username, password);
+
 			return result;
 		} catch (Exception e) {
 			System.out.println("Error logging in!");
 			e.printStackTrace();
 			return false;
 		}
-		
+
 
 	}
-	
-	private boolean doLogin(final String username, final String password) throws Exception {		
+
+	private boolean doLogin(final String username, final String password) throws Exception {
 		client = new FilesClient(username, password);
-		return client.login();		
+		return client.login();
 	}
-	
-	private static final String HELP_STRING = 
+
+	private static final String HELP_STRING =
 		"Commands:\n" +
 		"   get                               List the containers for this account\n" +
 		"   get container                     List the contents of the given container\n" +
@@ -76,11 +76,11 @@ public class FilesCli {
 		"   regions                           List the available regions\n" +
 		"   setregion region                  Set the current region\n" +
 		"   help                              Print this help message\n" +
-     	"   exit                              Exit the program\n";
-	
+		 "   exit                              Exit the program\n";
+
 	private boolean evaluateCommand(String cmd) {
 		cmd = cmd.trim();
-		
+
 		String components[] = cmd.split("\\s+");
 		if (cmd.length() == 0 || "help".equals(components[0].toLowerCase())) {
 			System.out.println(HELP_STRING);
@@ -88,23 +88,23 @@ public class FilesCli {
 		}
 		return evaluateCommand(components);
 	}
-	
+
 	private boolean evaluateCommand(String[] components) {
-		
+
 		String command = components[0].toLowerCase();
-		
+
 		if ("help".equals(command)) {
 			System.out.println(HELP_STRING);
 		}
 		// Exit
 		if("exit".equals(command) || "quit".equals(command)) {
 			System.out.println("Exiting");
-			return false; 
+			return false;
 		}
-		
+
 		//-- "get" - lists containers
 		//-- "get <container name>" - list contents of specified container
-		//	--"get <object name>" - downloads object 
+		//	--"get <object name>" - downloads object
 		if("get".equals(command)) {
 			if(components.length == 1) {
 				try {
@@ -131,13 +131,13 @@ public class FilesCli {
 					// It's a container
 					try {
 						List<FilesObject> objects = client.listObjects(name);
-						if (objects.size() == 0) { 
+						if (objects.size() == 0) {
 							System.out.println("Container " + name + " was empty");
 							return true;
 						}
-						
+
 						System.out.println("Contents of " + name + ":");
-						for(FilesObject obj : objects) { 
+						for(FilesObject obj : objects) {
 							System.out.println("  " + obj.getName() + " " + obj.getSizeString());
 						}
 						System.out.println();
@@ -145,19 +145,19 @@ public class FilesCli {
 						System.out.println("Error trying to list container contents");
 						e.printStackTrace();
 						return true;
-					} 
+					}
 				}
 				else {
 					// It's an object
-					if (components.length != 3) { 
+					if (components.length != 3) {
 						System.out.println("usage:  get container/filename.ext destination.ext");
 						return true;
 					}
-					
+
 					String container = name.substring(0, slashLocation);
 					String object = name.substring(slashLocation + 1);
 					String destination = components[2];
-					
+
 					try {
 						InputStream is = client.getObjectAsStream(container, object);
 						FileOutputStream fos = new FileOutputStream(destination);
@@ -180,8 +180,8 @@ public class FilesCli {
 			return true;
 		}
 
-		// -- "head <container name>" - show container info  
-		// -- "head <object name>" - shown object info, incl meta data 
+		// -- "head <container name>" - show container info
+		// -- "head <object name>" - shown object info, incl meta data
 		if ("head".equals(command)) {
 			if (components.length == 1) {
 				try {
@@ -195,13 +195,13 @@ public class FilesCli {
 					System.err.println("Error getting container info");
 					e.printStackTrace();
 					return true;
-				} 	
+				}
 			}
 			DecimalFormat format = new DecimalFormat();
 			for(int i=1; i < components.length; i++) {
 				String name = components[i];
 				int slashLocation = name.indexOf('/');
-				if (slashLocation == -1) { 
+				if (slashLocation == -1) {
 					// assume it's a container
 					try {
 						FilesContainerInfo containerInfo = client.getContainerInfo(name);
@@ -213,14 +213,14 @@ public class FilesCli {
 						System.err.println("Error getting container info");
 						e.printStackTrace();
 						return true;
-					} 
+					}
 				}
 				else {
 					String container = name.substring(0, slashLocation);
 					String object = name.substring(slashLocation + 1);
 					try {
 						FilesObjectMetaData metadata = client.getObjectMetaData(container, object);
-						if (metadata == null) { 
+						if (metadata == null) {
 							System.out.println("Could not get metadata for " + name);
 						}
 						else {
@@ -229,19 +229,19 @@ public class FilesCli {
 							System.out.println("  Total Size: " + metadata.getContentLength() + " bytes");
 							System.out.println("  MIME type: " + metadata.getMimeType());
 							Map<String, String> md = metadata.getMetaData();
-							if (md.size() == 0) { 
+							if (md.size() == 0) {
 								System.out.println("  Contains no metadata");
 							}
 							else {
 								System.out.println("  Metadata:");
-								for(String key : md.keySet()) { 
+								for(String key : md.keySet()) {
 									System.out.println("    " + key + " => " + md.get(key));
 								}
 							}
-							System.out.println();		
+							System.out.println();
 						}
 					}
-					catch (Exception e) { 
+					catch (Exception e) {
 						System.err.println("Error getting object info");
 						e.printStackTrace();
 						return true;
@@ -251,8 +251,8 @@ public class FilesCli {
 			return true;
 		}
 
-		// --"put <container name>" - create new container 
-		// --"put <local file>" - upload object 
+		// --"put <container name>" - create new container
+		// --"put <local file>" - upload object
 		if("put".equals(command)) {
 			if (components.length == 2) {
 				String newContainerName = components[1];
@@ -269,15 +269,15 @@ public class FilesCli {
 					System.out.println("Error creating container");
 					e.printStackTrace();
 					return true;
-				} 
+				}
 				return true;
 			}
-			else if(components.length == 3) { 
-				String containerName = components[1];	
+			else if(components.length == 3) {
+				String containerName = components[1];
 				String filename = components[2];
-				
+
 				File file = new File(filename);
-				if (!file.exists()) { 
+				if (!file.exists()) {
 					System.out.println("Could not find file " + file.getAbsolutePath());
 					return true;
 				}
@@ -288,18 +288,18 @@ public class FilesCli {
 					extention = name.substring(dotLocation + 1);
 				}
 				String mimeType = FilesConstants.getMimetype(extention);
-				
+
 				try {
 					if (!client.containerExists(containerName)) {
 						System.out.println("Container " + containerName + " does not exist");
 						return true;
 					}
-					if (client.storeObject(containerName, file, mimeType) != null) { 
+					if (client.storeObject(containerName, file, mimeType) != null) {
 						System.out.println("Object " + file.getName() + " was created");
 					}
 					return true;
 				}
-				catch (Exception e) { 
+				catch (Exception e) {
 					System.out.println("Problem uploading file");
 					e.printStackTrace();
 					return true;
@@ -311,13 +311,13 @@ public class FilesCli {
 			return true;
 		}
 
-		//--"delete <object name>" - delete the specified object  
-		// --"delete <container name>" - delete the specified container 
+		//--"delete <object name>" - delete the specified object
+		// --"delete <container name>" - delete the specified container
 		if("delete".equals(command)) {
 			for(int i=1; i < components.length; i++) {
 				String name = components[i];
 				int slashLocation = name.indexOf('/');
-				if (slashLocation == -1) { 
+				if (slashLocation == -1) {
 					// assume it's a container
 					boolean returnCode = false;
 					try {
@@ -333,8 +333,8 @@ public class FilesCli {
 						System.out.println("Error deleting container");
 						e.printStackTrace();
 						return true;
-					} 
-					if (returnCode) { 
+					}
+					if (returnCode) {
 						System.out.println ("Container \"" + name + "\" deleted");
 					}
 					else {
@@ -348,7 +348,7 @@ public class FilesCli {
 					try {
 						client.deleteObject(container, object);
 						System.out.println ("Object \"" + name + "\" deleted");
-					} 
+					}
 					catch (FilesNotFoundException fnfe) {
 						System.out.println(name + " could not be found");
 					}
@@ -356,13 +356,13 @@ public class FilesCli {
 						System.out.println("Error deleting object");
 						e.printStackTrace();
 						return true;
-					} 
+					}
 				}
 			}
-			return true;	
+			return true;
 		}
-		
-		// -- "regions" - show available regions  
+
+		// -- "regions" - show available regions
 		if ("regions".equals(command)) {
 			if (components.length == 1) {
 				try {
@@ -381,13 +381,13 @@ public class FilesCli {
 					System.err.println("Error getting container info");
 					e.printStackTrace();
 					return true;
-				} 	
+				}
 			} else {
 				System.out.println("Usage:\n  regions");
 			}
 			return true;
 		}
-		
+
 		// -- "setregion <region>" - set the current region
 		if ("setregion".equals(command)) {
 			if (components.length == 2) {
@@ -399,7 +399,7 @@ public class FilesCli {
 				catch (Exception e) {
 					System.err.println("Error setting region");
 					return true;
-				} 	
+				}
 			} else {
 				System.out.println("Usage:\n  setregion region");
 			}
@@ -411,20 +411,20 @@ public class FilesCli {
 		System.out.println(HELP_STRING);
 		return true;
 	}
-	
+
 
 	public static class CommandLineOptions {
 		public final String userName;
 		public final String password;
 		public final String[] command;
-		
+
 		public CommandLineOptions(String[] args) {
 			String userName = null;
 			String password = null;
 			List<String> command = new ArrayList<String>();
 			userName = System.getenv("CLOUDFILES_USERNAME");
 			password = System.getenv("CLOUDFILES_PASSWORD");
-			for (int i = 0; i < args.length; i ++) {		
+			for (int i = 0; i < args.length; i ++) {
 				if ("username".equals(args[i])) {
 					if (i >= args.length - 1) {
 						throw new RuntimeException("No argument following option 'username'.");
@@ -452,7 +452,7 @@ public class FilesCli {
 			this.command = new String[command.size()];
 			command.toArray(this.command);
 		}
-		
+
 	}
 	/**
 	 * @param args
@@ -460,12 +460,12 @@ public class FilesCli {
 	public static void main(String[] args) {
 
 		if (args.length < 1) {
-			interactiveMode();			
+			interactiveMode();
 		} else {
 			parseArgs(args);
 		}
 	}
-	
+
 	public static void parseArgs(String[] args) {
 		try {
 			final CommandLineOptions options = new CommandLineOptions(args);
@@ -475,7 +475,7 @@ public class FilesCli {
 			}
 			if (options.command.length == 0) {
 				System.out.println("Login was successful, but no other commands were specified.");
-				System.out.println(HELP_STRING);				
+				System.out.println(HELP_STRING);
 			} else {
 				cli.evaluateCommand(options.command);
 			}
@@ -484,10 +484,10 @@ public class FilesCli {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static void interactiveMode() {
 		FilesCli commandLine = new FilesCli();
-		
+
 		if (commandLine.doLogin()) {
 			System.out.println("Type 'help' for assistance");
 			String cmd = "";
@@ -498,12 +498,12 @@ public class FilesCli {
 				try {
 					cmd = commandLine.console.readLine();
 				}
-				catch (IOException e) { 
+				catch (IOException e) {
 					cmd = "";
 				}
-				
-			} while(commandLine.evaluateCommand(cmd)); 
-			
+
+			} while(commandLine.evaluateCommand(cmd));
+
 			System.exit(0);
 		}
 		else {

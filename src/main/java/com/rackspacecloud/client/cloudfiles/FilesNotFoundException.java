@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.rackspacecloud.client.cloudfiles;
 
@@ -13,7 +13,7 @@ import org.apache.http.StatusLine;
 public class FilesNotFoundException extends FilesException {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 111718445621236026L;
 

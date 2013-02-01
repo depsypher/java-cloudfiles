@@ -1,19 +1,31 @@
 /*
  * See COPYING for license information.
- */ 
+ */
 
 package com.rackspacecloud.client.cloudfiles.sample;
 
-import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.cli.*;
-import org.apache.http.HttpException;
-
-import java.io.*;
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.List;
 
-import com.rackspacecloud.client.cloudfiles.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpException;
+import org.apache.log4j.Logger;
+
+import com.rackspacecloud.client.cloudfiles.FilesAuthorizationException;
+import com.rackspacecloud.client.cloudfiles.FilesClient;
+import com.rackspacecloud.client.cloudfiles.FilesContainerNotEmptyException;
+import com.rackspacecloud.client.cloudfiles.FilesException;
+import com.rackspacecloud.client.cloudfiles.FilesNotFoundException;
+import com.rackspacecloud.client.cloudfiles.FilesObject;
 
 public class FilesRemove
 {
@@ -42,7 +54,7 @@ public class FilesRemove
 			{
 				String containerName = null;
 				containerName = line.getOptionValue("container");
-				removeContainer (containerName, line.hasOption('r'));    
+				removeContainer (containerName, line.hasOption('r'));
 			}//if (line.hasOption("container"))
 
 			if (line.hasOption("object"))
@@ -116,20 +128,20 @@ public class FilesRemove
 					client.deleteObject(containerName, obj.getName());
 				}
 			}
-			
+
 			try {
 				if (client.deleteContainer(containerName)) {
 					System.out.println(containerName+" deleted");
-					System.exit (0);					
+					System.exit (0);
 				}
 				else{
 					System.out.println(containerName+" was not deleted");
-					System.exit (-1);					
+					System.exit (-1);
 				}
 			}
 			catch (FilesNotFoundException fnfe) {
 				System.out.println(containerName+" not found !");
-				System.exit (0);				
+				System.exit (0);
 			}
 			catch (FilesContainerNotEmptyException fcnee) {
 				System.out.println(containerName+" is not empty use -r !");
@@ -154,7 +166,7 @@ public class FilesRemove
 	private static Options addCommandLineOptions ()
 	{
 		Option help = new Option( "help", "print this message" );
-		Option recurse = new Option( "r", "Recursively go through the folders and files" );    
+		Option recurse = new Option( "r", "Recursively go through the folders and files" );
 
 		Option container = OptionBuilder.withArgName("container")
 		.hasArg (true)
@@ -165,7 +177,7 @@ public class FilesRemove
 		.hasArg (true)
 		.withDescription ("Name and path of  object to remove.")
 		.create ("object");
-		
+
 		Options options = new Options();
 
 		options.addOption(help);

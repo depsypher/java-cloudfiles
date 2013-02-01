@@ -1,9 +1,8 @@
 /**
- * 
+ *
  */
 package com.rackspacecloud.client.cloudfiles;
 
-import com.rackspacecloud.client.cloudfiles.FilesClient;
 
 /**
  * @author lvaughn
@@ -17,9 +16,9 @@ public class LongRunningTest {
 	public static void main(String[] args) {
 		try {
 			FilesClient client = new FilesClient();
-	
+
 			client.login();
-			
+
 			for(int i=0; i < 120; ++i) {
 				byte data[] = client.getObject("test_html", "test.html");
 				assert (data != null);
@@ -31,8 +30,8 @@ public class LongRunningTest {
 					// No Op
 				}
 			}
-		
-		
+
+
 		}
 		catch (Exception ex) {
 			ex.printStackTrace();

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.rackspacecloud.client.cloudfiles;
 
@@ -17,7 +17,7 @@ public class FilesCDNContainer {
 	private String streamingURL = null;
 	private String name;
 	private boolean retainLogs;
-	
+
 	/**
 	 * @return the retainLogs
 	 */
@@ -34,31 +34,31 @@ public class FilesCDNContainer {
 
 	public FilesCDNContainer() {
 	}
-	
+
 	public FilesCDNContainer(String cdnURL) {
 		this.cdnURL = cdnURL;
 	}
-	
+
 	public FilesCDNContainer(String cdnURL, String sslUrl) {
 		this.cdnURL = cdnURL;
 		this.sslURL = sslUrl;
 	}
-	
+
 	public FilesCDNContainer(String cdnURL, String sslUrl, String streamingUrl) {
 		this.cdnURL = cdnURL;
 		this.sslURL = sslUrl;
 		this.streamingURL = streamingUrl;
 	}
-	
+
 	public FilesCDNContainer(String name, boolean enabled, int ttl, boolean retainLogs) {
 		this.enabled = enabled;
 		this.ttl = ttl;
 		this.name = name;
 		this.retainLogs = retainLogs;
 	}
-	
 
-	
+
+
 	/**
 	 * @return Is this container CDN enabled
 	 */
@@ -143,13 +143,13 @@ public class FilesCDNContainer {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param sslURL the sslURL to set
 	 */
 	void setSSLURL(String sslURL) {
 		this.sslURL = sslURL;
 	}
-	
+
 	/**
 	 * @return The  Streaming URL for accessing content in this container via the CDN
 	 */
@@ -158,7 +158,7 @@ public class FilesCDNContainer {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param sstreamingURL the streamingURL to set
 	 */
 	void setStreamingURL(String streamingURL) {

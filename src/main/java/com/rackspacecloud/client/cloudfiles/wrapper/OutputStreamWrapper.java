@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.rackspacecloud.client.cloudfiles.wrapper;
 
@@ -18,7 +18,7 @@ public class OutputStreamWrapper extends OutputStream {
 	private final static int callbackInterval = 1024 * 8;
 	private long lastCallback = 0;
 	private long bytesTransfered = 0;
-	
+
 	public OutputStreamWrapper(OutputStream os, IFilesTransferCallback callback) {
 		this.stream = os;
 		this.callback = callback;
@@ -33,14 +33,15 @@ public class OutputStreamWrapper extends OutputStream {
 		++bytesTransfered;
 		checkCallback(false);
 	}
-	
+
+	@Override
 	public void write(byte[] b, int off, int len) throws IOException {
 		// Short circuit this if we don't have a callback.
 		if (callback == null) {
 			stream.write(b, off, len);
 			return;
 		}
-		
+
 		// Otherwise, dole this out on chunks
 		while(len > 0) {
 			int toWrite = Math.min(len, callbackInterval);
@@ -52,24 +53,27 @@ public class OutputStreamWrapper extends OutputStream {
 		}
 		checkCallback(true);
 	}
-	
+
+	@Override
 	public void write(byte[] b) throws IOException {
 		write(b, 0, b.length);
 	}
-	
+
+	@Override
 	public void close() throws IOException {
 		stream.close();
 		checkCallback(true);
 	}
-	
+
+	@Override
 	public void flush() throws IOException {
 		stream.flush();
 		checkCallback(true);
 	}
-	
+
 	private void checkCallback(boolean force) {
 		if (callback != null) {
-			if ((bytesTransfered - lastCallback >= callbackInterval) || 
+			if ((bytesTransfered - lastCallback >= callbackInterval) ||
 				(force && bytesTransfered != lastCallback)) {
 				callback.progress(bytesTransfered);
 				lastCallback = bytesTransfered;

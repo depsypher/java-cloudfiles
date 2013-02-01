@@ -15,45 +15,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import junit.framework.TestCase;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.log4j.Logger;
 
-import com.rackspacecloud.client.cloudfiles.FilesAccountInfo;
-import com.rackspacecloud.client.cloudfiles.FilesCDNContainer;
-import com.rackspacecloud.client.cloudfiles.FilesClient;
-import com.rackspacecloud.client.cloudfiles.FilesConstants;
-import com.rackspacecloud.client.cloudfiles.FilesContainer;
-import com.rackspacecloud.client.cloudfiles.FilesContainerExistsException;
-import com.rackspacecloud.client.cloudfiles.FilesContainerInfo;
-import com.rackspacecloud.client.cloudfiles.FilesInvalidNameException;
-import com.rackspacecloud.client.cloudfiles.FilesNotFoundException;
-import com.rackspacecloud.client.cloudfiles.FilesObject;
-import com.rackspacecloud.client.cloudfiles.FilesObjectMetaData;
-import com.rackspacecloud.client.cloudfiles.FilesUtil;
-import com.rackspacecloud.client.cloudfiles.IFilesTransferCallback;
-
-
-import junit.framework.TestCase;
-
 public class SnetFilesClientTestCase extends TestCase {
-    private static Logger logger = Logger.getLogger(FilesClientTestCase.class);
+	private static Logger logger = Logger.getLogger(FilesClientTestCase.class);
 	private static File SYSTEM_TMP = SystemUtils.getJavaIoTmpDir();
 	private static int NUMBER_RANDOM_BYTES = 513;
-	
+
 	public void testConstructor() {
 		FilesClient client = new FilesClient("foo", "bar", "baz");
-		
+
 		assertNotNull(client);
 		assertEquals("foo", client.getUserName());
 		assertEquals("bar", client.getPassword());
 		assertEquals("baz", client.getAccount());
-				
+
 	}
 
 	public void testNoArgConstructor() {
 		FilesClient client = new FilesClient();
-		
+
 		assertNotNull(client);
 		assertEquals(FilesUtil.getProperty("username"), client.getUserName());
 		assertEquals(FilesUtil.getProperty("password"), client.getPassword());
@@ -62,27 +47,27 @@ public class SnetFilesClientTestCase extends TestCase {
 
 	public void testLogin() {
 		FilesClient client = new FilesClient();
-		
+
 		try {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
-		
+		}
+
 		// Now try a failed login
-		client = new FilesClient(FilesUtil.getProperty("username"), 
-				 	   		  FilesUtil.getProperty("password") + " this is a bogus password", 
-				 	   		  FilesUtil.getProperty("account"));
+		client = new FilesClient(FilesUtil.getProperty("username"),
+								FilesUtil.getProperty("password") + " this is a bogus password",
+								FilesUtil.getProperty("account"));
 		try {
-			
+
 			assertFalse(client.login());
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testAccountInfo() {
 		String containerName = createTempContainerName("byte-array");
 		String filename = makeFileName("accountinfo");
@@ -91,39 +76,39 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Add it
 			client.createContainer(containerName);
-			
+
 			// See that it's there
 			assertTrue(client.containerExists(containerName));
 			assertNotNull(client.getContainerInfo(containerName));
-			
+
 			// Add some data
 			byte randomData[] = makeRandomBytes();
 			assertTrue(client.storeObject(containerName, randomData, "application/octet-stream", filename, new HashMap<String,String>()));
-			
+
 			// Do the test if we have an account
-			if (FilesUtil.getProperty("account") != null) { 
+			if (FilesUtil.getProperty("account") != null) {
 				FilesAccountInfo info = client.getAccountInfo();
 				assertTrue(info.getContainerCount() > 0);
 				assertTrue(info.getBytesUsed() >= randomData.length);
 			}
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		} 		
+		}
 	}
-	
+
 	public void testMultipleFilesNotThere() {
-	    // Tests to make sure we're releasing connections with 404's
+		// Tests to make sure we're releasing connections with 404's
 		FilesClient client = new FilesClient();
 		String filename = makeFileName("random");
 		String fullPath = FilenameUtils.concat(SYSTEM_TMP.getAbsolutePath(), filename);
@@ -134,31 +119,31 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.login());
 			String containerName = createTempContainerName("file-not-there");
 			client.createContainer(containerName);
-			
+
 			String[] names =  new String[10];
 			for(int i=0; i < 10; ++i) names[i] = "File" + (i + 1) + ".txt";
-			for(int i=0; i < 5; ++i) 			
+			for(int i=0; i < 5; ++i)
 				assertNotNull(client.storeObjectAs(containerName, new File(fullPath), "application/octet-stream", names[i]));
 
-            for (int i = 0; i < 10; i++) {
-                String fileName = names[i];
+			for (int i = 0; i < 10; i++) {
+				String fileName = names[i];
 
-                byte[] retrievedContent = null;
-                try {
-                    retrievedContent = client.getObject(containerName, fileName);
-                    assertArrayEquals(content, retrievedContent);
-                } catch(FilesNotFoundException ex) {
-                    assertTrue(i >= 5);
-                }
-            }
- 			// Cleanup
-			for(int i=0; i < 5; ++i) 			
+				byte[] retrievedContent = null;
+				try {
+					retrievedContent = client.getObject(containerName, fileName);
+					assertArrayEquals(content, retrievedContent);
+				} catch(FilesNotFoundException ex) {
+					assertTrue(i >= 5);
+				}
+			}
+			// Cleanup
+			for(int i=0; i < 5; ++i)
 				client.deleteObject(containerName, names[i]);
 			client.deleteContainer(containerName);
 
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 		finally {
 			File f = new File(fullPath);
 			f.delete();
@@ -172,17 +157,17 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 			String containerName = createTempContainerName("");
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Add it
 			client.createContainer(containerName);
-			
+
 			// See that it's there
 			assertTrue(client.containerExists(containerName));
 			assertNotNull(client.getContainerInfo(containerName));
-			
+
 			// Try Adding it again
 			try {
 				client.createContainer(containerName);
@@ -191,20 +176,20 @@ public class SnetFilesClientTestCase extends TestCase {
 			catch (FilesContainerExistsException fcee) {
 				// Hooray!
 			}
-			
+
 			// See that it's still there
 			assertTrue(client.containerExists(containerName));
-			
+
 			// Delete it
 			assertTrue(client.deleteContainer(containerName));
-			
+
 			// Make sure it's gone
 			assertFalse(client.containerExists(containerName));
-			
+
 
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
 	public void testSnetToggle() {
 		FilesClient client = new FilesClient();
@@ -213,10 +198,10 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			String containerName = createTempContainerName("");
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Add it
 			client.createContainer(containerName);
 			client.usePublic();
@@ -224,7 +209,7 @@ public class SnetFilesClientTestCase extends TestCase {
 			// See that it's there
 			assertTrue(client.containerExists(containerName));
 			assertNotNull(client.getContainerInfo(containerName));
-			
+
 			// Try Adding it again
 			try {
 				client.createContainer(containerName);
@@ -233,20 +218,20 @@ public class SnetFilesClientTestCase extends TestCase {
 			catch (FilesContainerExistsException fcee) {
 				// Hooray!
 			}
-			
+
 			// See that it's still there
 			assertTrue(client.containerExists(containerName));
-			
+
 			// Delete it
 			assertTrue(client.deleteContainer(containerName));
-			
+
 			// Make sure it's gone
 			assertFalse(client.containerExists(containerName));
-			
+
 
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
 	public void testContainerNotThereDeletion() {
 		FilesClient client = new FilesClient();
@@ -255,10 +240,10 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 			String containerName = createTempContainerName("I'mNotHere!");
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			boolean exceptionThrown = false;
 			try {
 				client.deleteContainer(containerName);
@@ -268,16 +253,16 @@ public class SnetFilesClientTestCase extends TestCase {
 				exceptionThrown = true;
 			}
 			assertTrue (exceptionThrown);
-			
+
 			// Make still not there
 			assertFalse(client.containerExists(containerName));
-			
+
 
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testContainerCreationWithSpaces() {
 		FilesClient client = new FilesClient();
 		try {
@@ -285,17 +270,17 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 			String containerName = createTempContainerName("with space+and+plus");
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Add it
 			client.createContainer(containerName);
-			
+
 			// See that it's there
 			assertTrue(client.containerExists(containerName));
 			assertNotNull(client.getContainerInfo(containerName));
-			
+
 			// Try Adding it again
 			try {
 				client.createContainer(containerName);
@@ -304,10 +289,10 @@ public class SnetFilesClientTestCase extends TestCase {
 			catch (FilesContainerExistsException fcee) {
 				// Pass this case
 			}
-			
+
 			// See that it's still there
 			assertTrue(client.containerExists(containerName));
-			
+
 			boolean found = false;
 			List<FilesContainer> containers = client.listContainers();
 			for (FilesContainer cont : containers) {
@@ -315,20 +300,20 @@ public class SnetFilesClientTestCase extends TestCase {
 				if(containerName.equals(cont.getName())) found = true;
 			}
 			assertTrue(found);
-			
-			
+
+
 			// Delete it
 			assertTrue(client.deleteContainer(containerName));
-			
+
 			// Make sure it's gone
 			assertFalse(client.containerExists(containerName));
-			
+
 
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testContainerInfoListing() {
 		FilesClient client = new FilesClient();
 		try {
@@ -336,17 +321,17 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 			String containerName = createTempContainerName("<container with\u1422 spaces>");
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Add it
 			client.createContainer(containerName);
-			
+
 			// See that it's there
 			assertTrue(client.containerExists(containerName));
 			assertNotNull(client.getContainerInfo(containerName));
-			
+
 			// Try Adding it again
 			try {
 				client.createContainer(containerName);
@@ -355,10 +340,10 @@ public class SnetFilesClientTestCase extends TestCase {
 			catch (FilesContainerExistsException fcee) {
 				// Hooray!
 			}
-			
+
 			// See that it's still there
 			assertTrue(client.containerExists(containerName));
-			
+
 			boolean found = false;
 			List<FilesContainerInfo> containers = client.listContainersInfo();
 			for (FilesContainerInfo info : containers) {
@@ -369,21 +354,21 @@ public class SnetFilesClientTestCase extends TestCase {
 				}
 			}
 			assertTrue(found);
-			
-			
+
+
 			// Delete it
 			assertTrue(client.deleteContainer(containerName));
-			
+
 			// Make sure it's gone
 			assertFalse(client.containerExists(containerName));
-			
+
 
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testUserAgent() {
 		FilesClient client = new FilesClient();
 		assertEquals(FilesConstants.USER_AGENT, client.getUserAgent());
@@ -394,29 +379,29 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 			String containerName = createTempContainerName("user-agent");
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Add it
 			client.createContainer(containerName);
-			
+
 			// See that it's there
 			assertTrue(client.containerExists(containerName));
 			assertNotNull(client.getContainerInfo(containerName));
-			
+
 			// Delete it
 			assertTrue(client.deleteContainer(containerName));
-			
+
 			// Make sure it's gone
 			assertFalse(client.containerExists(containerName));
-			
+
 
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testContainerNameNoSlashes() {
 		FilesClient client = new FilesClient();
 		try {
@@ -424,10 +409,10 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 			String containerName = createTempContainerName("/");
-			
+
 			// Make sure they're not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Try to add it
 			boolean exceptionThrown = false;
 			try {
@@ -440,9 +425,9 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(exceptionThrown);
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testFileSaving() {
 		String containerName = createTempContainerName("file-test");
 		String filename = makeFileName("random");
@@ -454,35 +439,35 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			logger.info("About to save: " + filename);
 			assertNotNull(client.storeObjectAs(containerName, new File(fullPath), "application/octet-stream", filename));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -492,7 +477,7 @@ public class SnetFilesClientTestCase extends TestCase {
 			File f = new File(fullPath);
 			f.delete();
 		}
-		
+
 	}
 	public void testSaveAs() {
 		String containerName = createTempContainerName("file-test");
@@ -506,35 +491,35 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			logger.info("About to save: " + filename);
 			assertNotNull(client.storeObjectAs(containerName, new File(fullPath), "application/octet-stream", otherFileName));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals("Bob", obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, otherFileName));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, otherFileName);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, otherFileName);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			fail(e.getMessage());
@@ -543,7 +528,7 @@ public class SnetFilesClientTestCase extends TestCase {
 			File f = new File(fullPath);
 			f.delete();
 		}
-		
+
 	}
 	public void testFileSavingWithCallback() {
 		String containerName = createTempContainerName("file-test");
@@ -556,40 +541,40 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			logger.info("About to save: " + filename);
 			TesterCallback callback = new TesterCallback();
 			assertNotNull(client.storeObjectAs(containerName, new File(fullPath), "application/octet-stream", filename, callback));
-			
-			// Make sure the callback was called 
+
+			// Make sure the callback was called
 			assertEquals(randomData.length, callback.bytesSent);
 			assertEquals(1, callback.nCalls);
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -600,7 +585,7 @@ public class SnetFilesClientTestCase extends TestCase {
 			File f = new File(fullPath);
 			f.delete();
 		}
-		
+
 	}
 	public void testFileSavingWithMetadata() {
 		String containerName = createTempContainerName("meta-data-test");
@@ -613,10 +598,10 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			HashMap<String,String> meta = new HashMap<String,String>();
 			meta.put("Foo", "bar");
@@ -624,24 +609,24 @@ public class SnetFilesClientTestCase extends TestCase {
 			meta.put("Width", "336");
 			meta.put("Height", "183");
 			assertNotNull(client.storeObjectAs(containerName, new File(fullPath), "application/octet-stream", filename, meta));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
+
 			// Make sure the metadata is correct
 			FilesObjectMetaData metadata = client.getObjectMetaData(containerName, filename);
 			assertNotNull(metadata);
@@ -651,11 +636,11 @@ public class SnetFilesClientTestCase extends TestCase {
 				assertTrue(serverMetadata.containsKey(key));
 				assertEquals(meta.get(key), serverMetadata.get(key));
 			}
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (FilesException e) {
 			e.printStackTrace();
@@ -669,7 +654,7 @@ public class SnetFilesClientTestCase extends TestCase {
 			File f = new File(fullPath);
 			f.delete();
 		}
-		
+
 	}
 
 	public void testFileSavingNoETag() {
@@ -686,34 +671,34 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			assertNotNull(client.storeObjectAs(containerName, new File(fullPath), "application/octet-stream", filename));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			fail(e.getMessage());
@@ -722,9 +707,9 @@ public class SnetFilesClientTestCase extends TestCase {
 			File f = new File(fullPath);
 			f.delete();
 		}
-		
+
 	}
-	
+
 	public void testContainerListing() {
 		String containerName = createTempContainerName("<container>");
 		String filename = makeFileName("<object>");
@@ -736,14 +721,14 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			logger.info("About to save: " + filename);
 			assertNotNull(client.storeObjectAs(containerName, new File(fullPath), "application/octet-stream", filename));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
@@ -752,21 +737,21 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertEquals("application/octet-stream", obj.getMimeType());
 			assertEquals(NUMBER_RANDOM_BYTES, obj.getSize());
 			assertEquals(md5Sum(randomData), obj.getMd5sum());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			fail(e.getMessage());
@@ -775,7 +760,7 @@ public class SnetFilesClientTestCase extends TestCase {
 			File f = new File(fullPath);
 			f.delete();
 		}
-		
+
 	}
 
 	public void testContainerListingWithXML() {
@@ -787,14 +772,14 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			logger.info("About to save: " + filename);
 			assertTrue(client.storeObject(containerName, randomData, "application/octet-stream", filename, new HashMap<String,String>()));
-				
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
@@ -803,26 +788,26 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertEquals("application/octet-stream", obj.getMimeType());
 			assertEquals(NUMBER_RANDOM_BYTES, obj.getSize());
 			assertEquals(md5Sum(randomData), obj.getMd5sum());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			fail(e.getMessage());
 		}
-		
+
 	}
 
 	public void testByteArraySaving() {
@@ -835,39 +820,39 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			assertTrue(client.storeObject(containerName, randomData, "application/octet-stream", filename, new HashMap<String,String>()));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
 	public void testLineNoiseSaving() {
@@ -880,39 +865,39 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			assertTrue(client.storeObject(containerName, randomData, "application/octet-stream", filename, new HashMap<String,String>()));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
 	public void testRequestEntitySaving() {
@@ -924,39 +909,39 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			assertTrue(client.storeObject(containerName, randomData, "test/content_type", filename, new HashMap<String,String>()));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("test/content_type", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
 	public void testObjectListing() {
@@ -968,15 +953,15 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			for (int i=0; i < 10; i++) {
 				assertTrue(client.storeObject(containerName, randomData, "application/octet-stream", "testfile" + i + ".bogus", new HashMap<String,String>()));
 			}
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(10, objects.size());
@@ -994,7 +979,7 @@ public class SnetFilesClientTestCase extends TestCase {
 				assertEquals("testfile" + i + ".bogus", obj.getName());
 				assertEquals("application/octet-stream", obj.getMimeType());
 			}
-			
+
 			// Now check out a marker
 			objects = client.listObjects(containerName, 4, "testfile3.bogus");
 			assertEquals(4, objects.size());
@@ -1003,18 +988,18 @@ public class SnetFilesClientTestCase extends TestCase {
 				assertEquals("testfile" + (i + 4) + ".bogus", obj.getName());
 				assertEquals("application/octet-stream", obj.getMimeType());
 			}
-			
-			// Clean up 
+
+			// Clean up
 			for (int i=0; i < 10; i++) {
 				client.deleteObject(containerName, "testfile" + i + ".bogus");
 			}
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
 	public void testContainerListingWithLimitMarker() {
@@ -1023,12 +1008,12 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Populate our  account
 			for (int i=0; i < 20; i++) {
 				client.createContainer("test_container_" + i);
 			}
-			
+
 			// Make sure it's there
 			List<FilesContainer> originalContainers = client.listContainers();
 			assertTrue(20 <=originalContainers.size());
@@ -1040,7 +1025,7 @@ public class SnetFilesClientTestCase extends TestCase {
 				FilesContainer container = containers.get(i);
 				assertEquals(originalContainers.get(i).getName(), container.getName());
 			}
-			
+
 			// Now check out a marker
 			containers = client.listContainers(10, originalContainers.get(originalContainers.size() - 5).getName());
 			assertEquals(4, containers.size());
@@ -1048,16 +1033,16 @@ public class SnetFilesClientTestCase extends TestCase {
 				FilesContainer container = containers.get(i);
 				assertEquals(originalContainers.get(originalContainers.size() - 4 + i).getName(), container.getName());
 			}
-			
-			// Clean up 
+
+			// Clean up
 			for (int i=0; i < 20; i++) {
 				assertTrue(client.deleteContainer("test_container_" + i));
-			}	
+			}
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
 	public void testByteArraySavingWithCallback() {
@@ -1070,28 +1055,28 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			TesterCallback callback = new TesterCallback();
 			assertTrue(client.storeObject(containerName, randomData, "application/octet-stream", filename, new HashMap<String,String>(), callback));
-			
+
 			// Make sure it all got written
 			assertEquals(randomData.length, callback.bytesSent);
 			assertEquals(randomData.length/8192 + 1, callback.nCalls);
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[randomData.length];
@@ -1102,16 +1087,16 @@ public class SnetFilesClientTestCase extends TestCase {
 			}
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
 	public void testStreamedSaving() {
@@ -1123,23 +1108,23 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			assertNotNull(client.storeStreamedObject(containerName, new ByteArrayInputStream(randomData), "application/octet-stream", filename, new HashMap<String,String>()));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[randomData.length];
@@ -1150,16 +1135,16 @@ public class SnetFilesClientTestCase extends TestCase {
 			}
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
 	public void testMD5IssueSaving() {
@@ -1167,7 +1152,7 @@ public class SnetFilesClientTestCase extends TestCase {
 		String filename = makeFileName("bytearray");
 		try {
 			byte randomData[] = makeRandomBytes();
-			
+
 			while(zeroStripMd5Sum(randomData).length() ==32) {
 				randomData = makeRandomBytes();
 			}
@@ -1176,67 +1161,67 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			assertTrue(client.storeObject(containerName, randomData, "application/octet-stream", filename, new HashMap<String,String>()));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
-    private static String zeroStripMd5Sum (byte[] data) throws IOException, NoSuchAlgorithmException
-    {
-    	MessageDigest digest = MessageDigest.getInstance("MD5");
+	private static String zeroStripMd5Sum (byte[] data) throws IOException, NoSuchAlgorithmException
+	{
+		MessageDigest digest = MessageDigest.getInstance("MD5");
 
-    	byte[] md5sum = digest.digest(data);
-    	BigInteger bigInt = new BigInteger(1, md5sum);
+		byte[] md5sum = digest.digest(data);
+		BigInteger bigInt = new BigInteger(1, md5sum);
 
-    	return bigInt.toString(16);
-    }
-    
-    private static String md5Sum (byte[] data) throws IOException, NoSuchAlgorithmException
-    {
-    	MessageDigest digest = MessageDigest.getInstance("MD5");
+		return bigInt.toString(16);
+	}
 
-    	byte[] md5sum = digest.digest(data);
-    	BigInteger bigInt = new BigInteger(1, md5sum);
-    	
-    	String result = bigInt.toString(16);
-    	
-    	while(result.length() < 32) {
-    		result = "0" + result;
-    	}
+	private static String md5Sum (byte[] data) throws IOException, NoSuchAlgorithmException
+	{
+		MessageDigest digest = MessageDigest.getInstance("MD5");
 
-    	return result;
-    }
-    	
+		byte[] md5sum = digest.digest(data);
+		BigInteger bigInt = new BigInteger(1, md5sum);
+
+		String result = bigInt.toString(16);
+
+		while(result.length() < 32) {
+			result = "0" + result;
+		}
+
+		return result;
+	}
+
 	public void testUnicodeContainer() {
 		String containerName = createTempContainerName("\u0169\u00f1\u00efcode-test-\u03de");
 		try {
@@ -1244,25 +1229,25 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
-			
+
+
 			// Make sure it's there
 			assertTrue(client.containerExists(containerName));
 
 			// Make sure we can get the container info
 			assertNotNull(client.getContainerInfo(containerName));
-			
-			// Clean up 
+
+			// Clean up
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		}		
+		}
 	}
 
 	public void testUnicode() {
@@ -1277,39 +1262,39 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			// Set up
 			client.createContainer(containerName);
-			
+
 			// Store it
 			assertNotNull(client.storeObjectAs(containerName, new File(fullPath), "application/octet-stream", filename));
-			
+
 			// Make sure it's there
 			List<FilesObject> objects = client.listObjects(containerName);
 			assertEquals(1, objects.size());
 			FilesObject obj = objects.get(0);
 			assertEquals(filename, obj.getName());
 			assertEquals("application/octet-stream", obj.getMimeType());
-			
+
 			assertNotNull(obj.getMetaData());
-			
+
 			// Make sure the data is correct
 			assertArrayEquals(randomData, client.getObject(containerName, filename));
-			
+
 			// Make sure the data is correct as a stream
 			InputStream is = client.getObjectAsStream(containerName, filename);
 			byte otherData[] = new byte[NUMBER_RANDOM_BYTES];
 			is.read(otherData);
 			assertArrayEquals(randomData, otherData);
 			assertEquals(-1, is.read()); // Could hang if there's a bug on the other end
-			
+
 			// Make sure we can get the container info
 			assertNotNull(client.getContainerInfo(containerName));
-			
-			// Clean up 
+
+			// Clean up
 			client.deleteObject(containerName, filename);
 			assertTrue(client.deleteContainer(containerName));
-			
+
 		}
 		catch (Exception e) {
 			e.printStackTrace();
@@ -1319,40 +1304,40 @@ public class SnetFilesClientTestCase extends TestCase {
 			File f = new File(fullPath);
 			f.delete();
 		}
-		
+
 	}
-	
+
 	public void testCDNContainerList() {
 		FilesClient client = new FilesClient();
 		try {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			List<String> containers = client.listCdnContainers();
 			assertTrue(containers.size() > 0);
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testCDNContainerListLimitMarker() {
 		FilesClient client = new FilesClient();
 		try {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-						
+
 			List<String> originalContainers = client.listCdnContainers();
 			assertTrue(originalContainers.size() > 0);
-			
+
 			// Now do a limit
 			List<String> containers = client.listCdnContainers(5);
 			assertEquals(5, containers.size());
 			for (int i=0; i < 5; i++) {
 				assertEquals(originalContainers.get(i), containers.get(i));
 			}
-			
+
 			// Now check out a marker
 			containers = client.listCdnContainers(10, originalContainers.get(originalContainers.size() - 5));
 			assertEquals(4, containers.size());
@@ -1361,7 +1346,7 @@ public class SnetFilesClientTestCase extends TestCase {
 			}
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
 	public void testCDNContainerFullListing() {
 		FilesClient client = new FilesClient();
@@ -1369,17 +1354,17 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			List<String> originalContainers = client.listCdnContainers();
 			assertTrue(originalContainers.size() > 0);
-			
+
 			// Now do a limit
 			List<FilesCDNContainer> containers = client.listCdnContainerInfo(5);
 			assertEquals(5, containers.size());
 			for (int i=0; i < 5; i++) {
 				assertEquals(originalContainers.get(i), containers.get(i).getName());
 			}
-			
+
 			// Now check out a marker
 			containers = client.listCdnContainerInfo(10, originalContainers.get(originalContainers.size() - 5));
 			assertEquals(4, containers.size());
@@ -1388,10 +1373,10 @@ public class SnetFilesClientTestCase extends TestCase {
 			}
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
-	
+
+
 	public void testCDNContainerFullListingAll() {
 		FilesClient client = new FilesClient();
 		try {
@@ -1404,10 +1389,10 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.listCdnContainerInfo();
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
-	
+
+
 	public void testCDNApi() {
 		String containerName = createTempContainerName("java api Test\u03DA_\u2042\u03de#<>\u2043\u2042\u2044\u2045");
 		//containerName = createTempContainerName("java Api Test no uniocde");
@@ -1417,32 +1402,32 @@ public class SnetFilesClientTestCase extends TestCase {
 			client.useSnet();
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
-			
+
 			List<String> containers = client.listCdnContainers();
 			int originalContainerListSize = containers.size();
-			
+
 			assertFalse(client.isCDNEnabled(containerName));
-	
+
 			String url = client.cdnEnableContainer(containerName);
 			assertNotNull(url);
 			assertTrue(client.isCDNEnabled(containerName));
 			containers = client.listCdnContainers();
 			assertEquals(originalContainerListSize + 1, containers.size());
-			
+
 			boolean found = false;
 			for(String container : containers) {
 				// logger.warn(container);
 				if (containerName.equals(container)) found = true;
 			}
 			assertTrue(found);
-			
+
 			FilesCDNContainer info = client.getCDNContainerInfo(containerName);
 			assertTrue(info.isEnabled());
 //			assertEquals("", info.getUserAgentACL());
 //			assertEquals("", info.getReferrerACL());
 			String cdnUrl = info.getCdnURL();
 			assertNotNull(cdnUrl);
-			
+
 			client.cdnUpdateContainer(containerName, 31415, false, true);
 			assertFalse(client.isCDNEnabled(containerName));
 			info = client.getCDNContainerInfo(containerName);
@@ -1450,7 +1435,7 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(info.getRetainLogs());
 			assertEquals(31415, info.getTtl());
 			assertEquals(cdnUrl, info.getCdnURL());
-			
+
 			//client.cdnUpdateContainer(containerName, 54321, true, "Referrer Test", "User Agent Acl Test");
 			client.cdnUpdateContainer(containerName, 54321, true, false);
 			assertTrue(client.isCDNEnabled(containerName));
@@ -1461,13 +1446,13 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertEquals(cdnUrl, info.getCdnURL());
 //			assertEquals("Referrer Test", info.getReferrerACL());
 //			assertEquals("User Agent Acl Test", info.getUserAgentACL());
-			
+
 
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	// Test container name limits
 	public void testContainerNameLimits()  {
 		FilesClient client = new FilesClient();
@@ -1493,7 +1478,7 @@ public class SnetFilesClientTestCase extends TestCase {
 			fail(ex.getMessage());
 		}
 	}
-	
+
 	public void testPathCreationAndListing() {
 		FilesClient client = new FilesClient();
 		try {
@@ -1501,44 +1486,44 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 			String containerName = createTempContainerName("pathTest");
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Add it
 			client.createContainer(containerName);
-			
+
 			// See that it's there
 			assertTrue(client.containerExists(containerName));
-			
+
 			// Add a path and two files
 			byte randomData[] = makeRandomBytes();
 			client.createPath(containerName, "foo");
 			client.storeObject(containerName, randomData, "application/octet-stream", "notInContainer.dat", new HashMap<String, String>());
 			client.storeObject(containerName, randomData, "application/octet-stream", "foo/inContainer.dat", new HashMap<String, String>());
-			
+
 			List<FilesObject> allObjects = client.listObjects(containerName);
 			List<FilesObject> pathObjects = client.listObjects(containerName, "foo");
-			
+
 			assertEquals(3, allObjects.size());
 			assertEquals(1, pathObjects.size());
 			assertEquals("foo/inContainer.dat", pathObjects.get(0).getName());
-			
+
 			// Delete it
 			client.deleteObject(containerName, "notInContainer.dat");
 			client.deleteObject(containerName, "foo/inContainer.dat");
 			client.deleteObject(containerName, "foo");
 			assertTrue(client.deleteContainer(containerName));
-			
+
 			// Make sure it's gone
 			assertFalse(client.containerExists(containerName));
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testPathCreation() {
 		FilesClient client = new FilesClient();
 		try {
@@ -1546,43 +1531,43 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 			String containerName = createTempContainerName("pathTest");
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Add it
 			client.createContainer(containerName);
-			
+
 			// See that it's there
 			assertTrue(client.containerExists(containerName));
-			
+
 			// Add a path and two files
 			client.createFullPath(containerName, "foo/bar/baz");
-			
+
 			List<FilesObject> allObjects = client.listObjects(containerName);
-			
+
 			assertEquals(3, allObjects.size());
-			
+
 			// If we don't throw an exception, we should be OK
 			client.getObject(containerName, "foo");
 			client.getObject(containerName, "foo/bar");
 			client.getObject(containerName, "foo/bar/baz");
-			
+
 			// Delete it
 			client.deleteObject(containerName, "foo/bar/baz");
 			client.deleteObject(containerName, "foo/bar");
 			client.deleteObject(containerName, "foo");
 			assertTrue(client.deleteContainer(containerName));
-			
+
 			// Make sure it's gone
 			assertFalse(client.containerExists(containerName));
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testFilesObjectPath() {
 		FilesClient client = new FilesClient();
 		try {
@@ -1590,43 +1575,43 @@ public class SnetFilesClientTestCase extends TestCase {
 			assertTrue(client.usingSnet());
 			assertTrue(client.login());
 			String containerName = createTempContainerName("FOpathTest");
-			
+
 			// Make sure it's not there
 			assertFalse(client.containerExists(containerName));
-			
+
 			// Add it
 			client.createContainer(containerName);
-			
+
 			// See that it's there
 			assertTrue(client.containerExists(containerName));
-			
+
 			// Add a path and two files
 			client.createPath(containerName, "test");
-			
+
 			List<FilesObject> allObjects = client.listObjects(containerName);
-			
+
 			assertEquals(1, allObjects.size());
-			
+
 			FilesObject obj = allObjects.get(0);
 			assertEquals(0, obj.getSize());
 			assertEquals("application/directory", obj.getMimeType());
-			
+
 			// If we don't throw an exception, we should be OK
 			client.getObject(containerName, "test");
-			
+
 			// Delete it
 			client.deleteObject(containerName, "test");
 			assertTrue(client.deleteContainer(containerName));
-			
+
 			// Make sure it's gone
 			assertFalse(client.containerExists(containerName));
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	public void testURLs() {
 		// Test to make sure these are getting set and are visible to the outside world (needed for Cyberduck's SSL).
 		FilesClient client = new FilesClient();
@@ -1639,20 +1624,20 @@ public class SnetFilesClientTestCase extends TestCase {
 
 		} catch (Exception e) {
 			fail(e.getMessage());
-		} 
+		}
 	}
-	
+
 	// Fun utilities
 	private String createTempContainerName(String addition) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSSS");
 		return "test-container-" + addition + "-" + sdf.format(new Date(System.currentTimeMillis()));
 	}
-	
+
 	private String makeFileName(String addition) {
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss_SSSS");
 		return "test-file-" + addition + "-" + sdf.format(new Date(System.currentTimeMillis()));
 	}
-	
+
 	private byte[] makeRandomFile(String name) throws IOException {
 
 		File file = new File(name);
@@ -1660,10 +1645,10 @@ public class SnetFilesClientTestCase extends TestCase {
 		byte randomData[] = makeRandomBytes();
 		fos.write(randomData);
 		fos.close();
-		
+
 		return randomData;
 	}
-	
+
 	private byte[] makeRandomBytes() {
 		return makeRandomBytes(NUMBER_RANDOM_BYTES);
 	}
@@ -1671,21 +1656,22 @@ public class SnetFilesClientTestCase extends TestCase {
 		byte results[] = new byte[nBytes];
 		Random gen = new Random();
 		gen.nextBytes(results);
-		
+
 		// Uncomment to get some not so random data
 		// for(int i=0; i < results.length; ++i) results[i] = (byte) (i % Byte.MAX_VALUE);
-		
+
 		return results;
 	}
-	
+
 	private void assertArrayEquals(byte a[], byte b[]) {
 		assertEquals(a.length, b.length);
 		for(int i=0; i < a.length; ++i) assertEquals(a[i], b[i]);
 	}
-	
+
 	private class TesterCallback implements IFilesTransferCallback {
 		public long bytesSent = 0;
 		public int nCalls = 0;
+		@Override
 		public void progress(long n) {
 			bytesSent = n;
 			++nCalls;

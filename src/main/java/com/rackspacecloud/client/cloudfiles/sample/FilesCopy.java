@@ -1,15 +1,30 @@
 /*
  * See COPYING for license information.
- */ 
+ */
 
 package com.rackspacecloud.client.cloudfiles.sample;
 
-import org.apache.commons.cli.*;
-import org.apache.commons.lang.SystemUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.http.HttpException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.SystemUtils;
+import org.apache.http.HttpException;
 import org.apache.log4j.Logger;
 
 import com.rackspacecloud.client.cloudfiles.FilesAuthorizationException;
@@ -17,11 +32,6 @@ import com.rackspacecloud.client.cloudfiles.FilesClient;
 import com.rackspacecloud.client.cloudfiles.FilesConstants;
 import com.rackspacecloud.client.cloudfiles.FilesException;
 import com.rackspacecloud.client.cloudfiles.FilesObject;
-
-import java.io.*;
-import java.util.zip.*;
-import java.util.*;
-import java.security.NoSuchAlgorithmException;
 
 public class FilesCopy
 {
@@ -59,7 +69,7 @@ public class FilesCopy
 				if (line.hasOption("folder") )
 				{
 					String localFolder = FilenameUtils.normalize( line.getOptionValue("folder") );
-					String containerName = null;    
+					String containerName = null;
 					if (StringUtils.isNotBlank(localFolder))
 					{
 						File localFolderObj = new File (localFolder);
@@ -72,7 +82,7 @@ public class FilesCopy
 								{
 									System.err.println ("You must provide a valid value for the  Container to upload to !");
 									System.exit (-1);
-								}//if (!StringUtils.isNotBlank(ontainerName))                            
+								}//if (!StringUtils.isNotBlank(ontainerName))
 							}
 							else
 							{
@@ -138,7 +148,7 @@ public class FilesCopy
 							System.out.println ("Nested folders are ignored !");
 
 							File zipedFolder = zipFolder(folder);
-							String mimeType = FilesConstants.getMimetype(ZIPEXTENSION);    
+							String mimeType = FilesConstants.getMimetype(ZIPEXTENSION);
 							copyToCreateContainerIfNeeded (zipedFolder, mimeType, containerName);
 						}
 						else
@@ -189,7 +199,7 @@ public class FilesCopy
 					String fileName = FilenameUtils.normalize (fileNamePath);
 					String fileExt = FilenameUtils.getExtension(fileNamePath);
 					String mimeType = FilesConstants.getMimetype(fileExt);
-					File file = new File (fileName);    
+					File file = new File (fileName);
 
 					if (line.hasOption("z"))
 					{
@@ -199,7 +209,7 @@ public class FilesCopy
 							File zippedFile = zipFile(file);
 							mimeType = FilesConstants.getMimetype(ZIPEXTENSION);
 							copyTo (zippedFile, mimeType, containerName);
-							zippedFile.delete();    
+							zippedFile.delete();
 						}
 
 					}//if (line.hasOption("z"))
@@ -208,7 +218,7 @@ public class FilesCopy
 
 						logger.info("Uploading "+fileName+ ".");
 						if (!file.isDirectory())
-							copyTo (file, mimeType, containerName);                        
+							copyTo (file, mimeType, containerName);
 						else
 						{
 							System.err.println ("The path you provided is a folder.  For uploading folders use the -folder option.");
@@ -222,7 +232,7 @@ public class FilesCopy
 					System.exit (-1);
 				}
 			}//if (line.hasOption("file"))
-		}//end try        
+		}//end try
 		catch( ParseException err )
 		{
 			System.err.println( "Please see the logs for more details. Error Message: "+err.getMessage() );
@@ -273,7 +283,7 @@ public class FilesCopy
 	 * @throws IOException
 	 * @throws HttpException
 	 * @throws NoSuchAlgorithmException
-	 * @throws FilesException 
+	 * @throws FilesException
 	 */
 	private static void copyToCreateContainerIfNeeded (File file, String mimeType,String containerName) throws IOException, HttpException, NoSuchAlgorithmException, FilesException
 	{
@@ -290,7 +300,7 @@ public class FilesCopy
 				logger.warn("The  container: "+containerName+" does not exist.  Creating it first before placing objects into it.");
 				System.out.println ("The  container: "+containerName+" does not exist.  Creating it first before placing objects into it.");
 				client.createContainer(containerName);
-				copyTo (file, mimeType, containerName);    
+				copyTo (file, mimeType, containerName);
 			}
 
 		}
@@ -304,7 +314,7 @@ public class FilesCopy
 	 * @throws IOException
 	 * @throws HttpException
 	 * @throws NoSuchAlgorithmException
-	 * @throws FilesException 
+	 * @throws FilesException
 	 */
 	private static void copyTo (File file, String mimeType,String containerName) throws IOException, HttpException, NoSuchAlgorithmException, FilesException
 	{
@@ -312,7 +322,7 @@ public class FilesCopy
 		if ( client.login() )
 		{
 			if (client.containerExists(containerName))
-				client.storeObject(containerName, file, mimeType);                
+				client.storeObject(containerName, file, mimeType);
 			else
 			{
 				logger.info("The  container: "+containerName+" does not exist.  Create it first before placing objects into it.");
@@ -415,7 +425,7 @@ public class FilesCopy
 	{
 		HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp( "List -file filename -container ContainerName [-z]", options );
-	}//private static void printHelp ()    
+	}//private static void printHelp ()
 
 	@SuppressWarnings("static-access")
 	private static Options addCommandLineOptions ()
@@ -439,7 +449,7 @@ public class FilesCopy
 
 		Option zip = new Option ("z","zip", false, "Compress the object being placed into . This option can be used with other options e.g. -tar");
 //		Option tar = new Option ("t","tar", false, "Create a tar of the folder. Using this option without a -folder has no effect !");
-		Option download = new Option ("d","download", false, "Copy files from  to the local system.  Must be used in conjunction to -folder -file -container");        
+		Option download = new Option ("d","download", false, "Copy files from  to the local system.  Must be used in conjunction to -folder -file -container");
 
 		Options options = new Options();
 
@@ -449,7 +459,7 @@ public class FilesCopy
 		options.addOption(help);
 		options.addOption(container);
 		//options.addOption(tar);
-		options.addOption(download);    
+		options.addOption(download);
 
 		return options;
 	}

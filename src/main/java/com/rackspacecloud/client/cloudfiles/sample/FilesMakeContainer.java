@@ -1,18 +1,26 @@
 /*
  * See COPYING for license information.
- */ 
+ */
 
 package com.rackspacecloud.client.cloudfiles.sample;
 
 //import org.apache.log4j.Logger;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.cli.*;
-import org.apache.http.HttpException;
-
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 
-import com.rackspacecloud.client.cloudfiles.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpException;
+
+import com.rackspacecloud.client.cloudfiles.FilesClient;
+import com.rackspacecloud.client.cloudfiles.FilesException;
 
 public class FilesMakeContainer
 {
@@ -39,7 +47,7 @@ public class FilesMakeContainer
 			if (line.hasOption("container"))
 			{
 				containerName = line.getOptionValue("container");
-				createContaier (containerName);    
+				createContaier (containerName);
 			}//end if (line.hasOption("container"))
 			else if (args.length > 0)
 			{

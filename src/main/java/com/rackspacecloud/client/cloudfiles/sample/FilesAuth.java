@@ -1,10 +1,10 @@
 /*
  * See COPYING for license information.
- */ 
+ */
 
 package com.rackspacecloud.client.cloudfiles.sample;
 
-import com.rackspacecloud.client.cloudfiles.*;
+import com.rackspacecloud.client.cloudfiles.FilesClient;
 
 public class FilesAuth
 {

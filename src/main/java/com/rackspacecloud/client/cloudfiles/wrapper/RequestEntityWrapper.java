@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package com.rackspacecloud.client.cloudfiles.wrapper;
 
@@ -19,7 +19,7 @@ import com.rackspacecloud.client.cloudfiles.IFilesTransferCallback;
 public class RequestEntityWrapper implements HttpEntity {
 	private HttpEntity entity;
 	private IFilesTransferCallback callback = null;
-	
+
 	public RequestEntityWrapper(HttpEntity entity, IFilesTransferCallback callback) {
 		this.entity = entity;
 		this.callback = callback;
@@ -28,6 +28,7 @@ public class RequestEntityWrapper implements HttpEntity {
 	/* (non-Javadoc)
 	 * @see org.apache.commons.httpclient.methods.RequestEntity#getContentLength()
 	 */
+	@Override
 	public long getContentLength() {
 		return entity.getContentLength();
 	}
@@ -35,6 +36,7 @@ public class RequestEntityWrapper implements HttpEntity {
 	/* (non-Javadoc)
 	 * @see org.apache.commons.httpclient.methods.RequestEntity#getContentType()
 	 */
+	@Override
 	public Header getContentType() {
 		return entity.getContentType();
 	}
@@ -42,6 +44,7 @@ public class RequestEntityWrapper implements HttpEntity {
 	/* (non-Javadoc)
 	 * @see org.apache.commons.httpclient.methods.RequestEntity#isRepeatable()
 	 */
+	@Override
 	public boolean isRepeatable() {
 		return entity.isRepeatable();
 	}
@@ -51,21 +54,23 @@ public class RequestEntityWrapper implements HttpEntity {
 	 *
 	public void writeRequest(OutputStream stream) throws IOException {
 		((RequestEntityWrapper) entity).writeRequest(new OutputStreamWrapper(stream, callback));
-		
+
 	} */
 
 	/* (non-Javadoc)
 	 * @see org.apache.http.HttpEntity#consumeContent()
 	 */
+	@Override
 	@SuppressWarnings("deprecation")
 	public void consumeContent() throws IOException {
 		entity.consumeContent();
-		
+
 	}
 
 	/* (non-Javadoc)
 	 * @see org.apache.http.HttpEntity#getContent()
 	 */
+	@Override
 	public InputStream getContent() throws IOException, IllegalStateException {
 		return entity.getContent();
 	}
@@ -73,6 +78,7 @@ public class RequestEntityWrapper implements HttpEntity {
 	/* (non-Javadoc)
 	 * @see org.apache.http.HttpEntity#getContentEncoding()
 	 */
+	@Override
 	public Header getContentEncoding() {
 		return entity.getContentEncoding();
 	}
@@ -80,6 +86,7 @@ public class RequestEntityWrapper implements HttpEntity {
 	/* (non-Javadoc)
 	 * @see org.apache.http.HttpEntity#isChunked()
 	 */
+	@Override
 	public boolean isChunked() {
 		return entity.isChunked();
 	}
@@ -87,6 +94,7 @@ public class RequestEntityWrapper implements HttpEntity {
 	/* (non-Javadoc)
 	 * @see org.apache.http.HttpEntity#isStreaming()
 	 */
+	@Override
 	public boolean isStreaming() {
 		return entity.isStreaming();
 	}
@@ -94,9 +102,10 @@ public class RequestEntityWrapper implements HttpEntity {
 	/* (non-Javadoc)
 	 * @see org.apache.http.HttpEntity#writeTo(java.io.OutputStream)
 	 */
+	@Override
 	public void writeTo(OutputStream os) throws IOException {
 		entity.writeTo(new OutputStreamWrapper(os, callback));
-		
+
 	}
-	
+
 }
